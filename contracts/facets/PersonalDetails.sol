@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// Diamond Storage
 library PersonalDetailsLib {
+    // storage slot to store the variables
     bytes32 constant DIAMOND_STORAGE_POSITION = keccak256("diamond.standard.test.personal_details");
 
+    // storage variables to be used in our contracts
     struct TestState {
         string name;
         uint256 age;
     }
 
+    // assign storage slot
     function diamondStorage() internal pure returns (TestState storage ds) {
         bytes32 position = DIAMOND_STORAGE_POSITION;
         assembly {
@@ -16,8 +20,10 @@ library PersonalDetailsLib {
         }
     }
 
+    // all internals function for those data variables
     function setMyName(string calldata _myName) internal {
-        TestState storage testState = diamondStorage();
+        // Diamond storage variables
+        TestState storage testState = diamondStorage(); 
         testState.name = _myName;
     }
 
