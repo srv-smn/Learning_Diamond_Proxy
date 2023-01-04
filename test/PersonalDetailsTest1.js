@@ -233,24 +233,26 @@ describe('Diamond Personal Details', async function () {
       assert.equal('Mr '+name,name_r)
     })
   
-    // it('should remove some test2 functions', async () => {
-    //   const test2Facet = await ethers.getContractAt('Test2Facet', diamondAddress)
-    //   const functionsToKeep = ['test2Func1()', 'test2Func5()', 'test2Func6()', 'test2Func19()', 'test2Func20()']
-    //   const selectors = getSelectors(test2Facet).remove(functionsToKeep)
-    //   tx = await diamondCutFacet.diamondCut(
-    //     [{
-    //       facetAddress: ethers.constants.AddressZero,
-    //       action: FacetCutAction.Remove,
-    //       functionSelectors: selectors
-    //     }],
-    //     ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
-    //   receipt = await tx.wait()
-    //   if (!receipt.status) {
-    //     throw Error(`Diamond upgrade failed: ${tx.hash}`)
-    //   }
-    //   result = await diamondLoupeFacet.facetFunctionSelectors(addresses[4])
-    //   assert.sameMembers(result, getSelectors(test2Facet).get(functionsToKeep))
-    // })
+    it('should remove some professionalDetails functions', async () => {
+      const professionalDetails = await ethers.getContractAt('ProfessionalDetails', diamondAddress)
+      const functionsToRemove = ['setMyCompanyName(string)']
+      const selectors = getSelectors(professionalDetails).get(functionsToRemove)
+      tx = await diamondCutFacet.diamondCut(
+        [{
+          facetAddress: ethers.constants.AddressZero,
+          action: FacetCutAction.Remove,
+          functionSelectors: selectors
+        }],
+        ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+      receipt = await tx.wait()
+      if (!receipt.status) {
+        throw Error(`Diamond upgrade failed: ${tx.hash}`)
+      }
+      result = await diamondLoupeFacet.facetFunctionSelectors(addresses[4])
+      assert.sameMembers(result, getSelectors(professionalDetails).remove(functionsToRemove))
+      
+      await expect( professionalDetails.setMyCompanyName('Rapid Innovation')).revertedWith('FunctionNotFound')
+    })
   
     // it('should remove some test1 functions', async () => {
     //   const test1Facet = await ethers.getContractAt('Test1Facet', diamondAddress)
@@ -346,4 +348,6 @@ describe('Diamond Personal Details', async function () {
     //   assert.sameMembers(facets[findAddressPositionInFacets(addresses[3], facets)][1], getSelectors(Test1Facet))
     //   assert.sameMembers(facets[findAddressPositionInFacets(addresses[4], facets)][1], getSelectors(Test2Facet))
     // })
+    // add new functions with init
+    // function sharing
   })
