@@ -73,6 +73,7 @@ describe('Diamond Personal Details', async function () {
     let diamondLoupeFacet
     let ownershipFacet
     let personalDetails
+    let professionalDetailsV1
     let tx
     let receipt
     let result
@@ -199,45 +200,38 @@ describe('Diamond Personal Details', async function () {
   
       })
   
-    // it('should replace supportsInterface function', async () => {
-    //   const Test1Facet = await ethers.getContractFactory('Test1Facet')
-    //   const selectors = getSelectors(Test1Facet).get(['supportsInterface(bytes4)'])
-    //   const testFacetAddress = addresses[3]
-    //   tx = await diamondCutFacet.diamondCut(
-    //     [{
-    //       facetAddress: testFacetAddress,
-    //       action: FacetCutAction.Replace,
-    //       functionSelectors: selectors
-    //     }],
-    //     ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
-    //   receipt = await tx.wait()
-    //   if (!receipt.status) {
-    //     throw Error(`Diamond upgrade failed: ${tx.hash}`)
-    //   }
-    //   result = await diamondLoupeFacet.facetFunctionSelectors(testFacetAddress)
-    //   assert.sameMembers(result, getSelectors(Test1Facet))
-    // })
-  
-    // it('should add test2 functions', async () => {
-    //   const Test2Facet = await ethers.getContractFactory('Test2Facet')
-    //   const test2Facet = await Test2Facet.deploy()
-    //   await test2Facet.deployed()
-    //   addresses.push(test2Facet.address)
-    //   const selectors = getSelectors(test2Facet)
-    //   tx = await diamondCutFacet.diamondCut(
-    //     [{
-    //       facetAddress: test2Facet.address,
-    //       action: FacetCutAction.Add,
-    //       functionSelectors: selectors
-    //     }],
-    //     ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
-    //   receipt = await tx.wait()
-    //   if (!receipt.status) {
-    //     throw Error(`Diamond upgrade failed: ${tx.hash}`)
-    //   }
-    //   result = await diamondLoupeFacet.facetFunctionSelectors(test2Facet.address)
-    //   assert.sameMembers(result, selectors)
-    // })
+    it('should replace getMyName function', async () => {
+        const PersonalDetailsV1 = await ethers.getContractFactory('PersonalDetailsV1')
+        personalDetailsV1 = await PersonalDetailsV1.deploy()
+        await personalDetailsV1.deployed()
+        addresses.push(personalDetailsV1.address)
+
+      const selectors = getSelectors(personalDetailsV1).get(['getMyName()'])
+      const testFacetAddress = personalDetailsV1.address
+      tx = await diamondCutFacet.diamondCut(
+        [{
+          facetAddress: testFacetAddress,
+          action: FacetCutAction.Replace,
+          functionSelectors: selectors
+        }],
+        ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+      receipt = await tx.wait()
+      if (!receipt.status) {
+        throw Error(`Diamond upgrade failed: ${tx.hash}`)
+      }
+      result = await diamondLoupeFacet.facetFunctionSelectors(testFacetAddress)
+      assert.sameMembers(result, getSelectors(personalDetailsV1))
+      
+      //const pd = await ethers.getContractAt('PersonalDetails', professionalDetails.address)
+      
+      result = await diamondLoupeFacet.facetFunctionSelectors(personalDetails.address)
+      assert.sameMembers(result, getSelectors(personalDetails).remove(['getMyName()']))
+
+        personalDetailsV1 = await ethers.getContractAt('PersonalDetailsV1', diamondAddress)
+      const name = 'Raven'
+      let name_r = await personalDetailsV1.getMyName()
+      assert.equal('Mr '+name,name_r)
+    })
   
     // it('should remove some test2 functions', async () => {
     //   const test2Facet = await ethers.getContractAt('Test2Facet', diamondAddress)
