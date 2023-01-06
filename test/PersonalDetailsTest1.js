@@ -88,7 +88,7 @@ describe('Diamond Personal Details', async function () {
         assert.sameMembers(result, selectors)
     })
 
-    it('should test function call', async () => {
+    it('should test PersonalDetails function call', async () => {
         const personalDetails = await ethers.getContractAt('PersonalDetails', diamondAddress)
         const name = 'Raven'
         const age = 48
@@ -103,5 +103,42 @@ describe('Diamond Personal Details', async function () {
         assert.equal(age, age_r)
 
     })
+
+    it('should add ProfessionalDetails functions', async () => {
+        const ProfessionalDetails = await ethers.getContractFactory('ProfessionalDetails')
+        professionalDetails = await ProfessionalDetails.deploy()
+        await professionalDetails.deployed()
+        addresses.push(professionalDetails.address)
+        const selectors = getSelectors(professionalDetails)//.remove(['supportsInterface(bytes4)'])
+        tx = await diamondCutFacet.diamondCut(
+          [{
+            facetAddress: professionalDetails.address,
+            action: FacetCutAction.Add,
+            functionSelectors: selectors
+          }],
+          ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+          receipt = await tx.wait()
+        if (!receipt.status) {
+          throw Error(`Diamond upgrade failed: ${tx.hash}`)
+        }
+        result = await diamondLoupeFacet.facetFunctionSelectors(professionalDetails.address)
+        assert.sameMembers(result, selectors)
+      })
+
+      it('should test ProfessionalDetails function call', async () => {
+        const professionalDetails = await ethers.getContractAt('ProfessionalDetails', diamondAddress)
+        const companyname = 'RI'
+        const salary = 500
+        const addName = await professionalDetails.setMyCompanyName(companyname)
+        await addName.wait()
+        const addSalary = await professionalDetails.setMySalary(salary)
+        await addSalary.wait()
+
+        let name_r = await professionalDetails.getMyCompanyName()
+        let salary_r = await professionalDetails.getMySalary()
+        assert.equal(companyname,name_r)
+        assert.equal(salary,salary_r)
+
+      })
 
 })
