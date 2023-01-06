@@ -1,5 +1,8 @@
 # Diamond-1-Hardhat Implementation
 
+### main branch is implemented through Diamond Storage
+### app storage branch is implemented through App Storage
+
 This is a reference implementation for [EIP-2535 Diamonds](https://github.com/ethereum/EIPs/issues/2535). To learn about other implementations go here: https://github.com/mudgen/diamond
 
 **Note:** The loupe functions in DiamondLoupeFacet.sol MUST be added to a diamond and are required by the EIP-2535 Diamonds standard.
