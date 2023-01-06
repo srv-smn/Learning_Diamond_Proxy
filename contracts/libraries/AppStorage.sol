@@ -13,4 +13,8 @@ struct AppStorage {
 
     // upgrade-2 , variables for persional details
     string homeTown;
+
+    // upgrade-3, variables added for user details 
+    address owner;
+    bool isInit;
 }

@@ -15,12 +15,15 @@ describe('Diamond Personal Details', async function () {
     let diamondLoupeFacet
     let ownershipFacet
     let personalDetails
+    let professionalDetails
     let tx
     let receipt
     let result
     const addresses = []
+    let owner, firstUser;
 
     before(async function () {
+        [owner, firstUser] = await ethers.getSigners();
         diamondAddress = await deployDiamond()
         diamondCutFacet = await ethers.getContractAt('DiamondCutFacet', diamondAddress)
         diamondLoupeFacet = await ethers.getContractAt('DiamondLoupeFacet', diamondAddress)
@@ -206,5 +209,126 @@ describe('Diamond Personal Details', async function () {
       
       await expect( professionalDetails.setMySalary(600)).revertedWith('FunctionNotFound')
     })
+
+    it('should add a new contract with init and inter-facet communication', async () => {
+      const UserDetails = await ethers.getContractFactory('UserDetails')
+      userDetails = await UserDetails.deploy()
+      await userDetails.deployed()
+      addresses.push(userDetails.address)
+
+      const UserDetailsInit = await ethers.getContractFactory('UserDetailsInit')
+      userDetailsInit = await UserDetailsInit.deploy()
+      await userDetailsInit.deployed()
+
+      let selectors = getSelectors(userDetails)
+      const testFacetAddress = userDetails.address
+
+      const userDetailsOwner = firstUser.address;
+      let functionCall = userDetailsInit.interface.encodeFunctionData('init',[userDetailsOwner])
+
+      tx = await diamondCutFacet.diamondCut(
+          [{
+            facetAddress: testFacetAddress,
+            action: FacetCutAction.Add,
+            functionSelectors: selectors
+          }],
+          userDetailsInit.address, functionCall, { gasLimit: 800000 })
+
+          receipt = await tx.wait()
+          selectors = getSelectors(diamondCutFacet)
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[0])
+          assert.sameMembers(result, selectors)
+          selectors = getSelectors(diamondLoupeFacet)
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[1])
+          assert.sameMembers(result, selectors)
+          selectors = getSelectors(ownershipFacet)
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[2])
+          assert.sameMembers(result, selectors)
+
+          selectors = getSelectors(personalDetails).remove(['getMyName()'])
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[3])
+          assert.sameMembers(result, selectors)
+
+          selectors = getSelectors(professionalDetails).remove(['setMySalary(uint256)'])
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[4])
+          assert.sameMembers(result, selectors)
+
+          selectors = getSelectors(personalDetailsV1)
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[5])
+          assert.sameMembers(result, selectors)
+
+          selectors = getSelectors(userDetails)
+          result = await diamondLoupeFacet.facetFunctionSelectors(addresses[6])
+          assert.sameMembers(result, selectors)
+
+  })
+
+  it('test functionality of UserDetails facets', async () => {
+      let name = 'Raven'
+      let age = 48;
+      let companyName = 'RI'
+      let salary = 500
+
+      userDetails = await ethers.getContractAt('UserDetails', diamondAddress)
+      await expect( userDetails._init(firstUser.address)).revertedWith('already initilised')
+      await expect( userDetails.setUserSalary(5000)).revertedWith('only owner can call')
+      let response = await userDetails.getUserDetails();
+
+      assert.equal('Mr '+name,response._name)
+      assert.equal(age,response._age.toString())
+      assert.equal(companyName,response._companyName)
+      assert.equal(salary,response._salary.toString())
+
+      let newSalary = 550;
+      userDetails.connect(firstUser).setUserSalary(newSalary)
+
+      response = await userDetails.getUserDetails();
+      assert.equal(newSalary,response._salary.toString())
+
+      name = 'Samuel'
+      age = 50
+      companyName = 'Rapid Innovation'
+      const tx = await userDetails.setUserDetails(name, age, companyName)
+      await tx.wait()
+
+       response = await userDetails.getUserDetails();
+
+      assert.equal('Mr '+name,response._name)
+      assert.equal(age,response._age.toString())
+      assert.equal(companyName,response._companyName)
+      assert.equal(newSalary,response._salary.toString())
+
+  })
+
+  it('test functionality of all facets', async () => {
+    personalDetails = await ethers.getContractAt('PersonalDetails', diamondAddress)
+    professionalDetails = await ethers.getContractAt('ProfessionalDetails', diamondAddress)
+    personalDetailsV1 = await ethers.getContractAt('PersonalDetailsV1', diamondAddress)
+    userDetails = await ethers.getContractAt('UserDetails', diamondAddress)
+
+    // personal details get function check
+
+    const name = 'Samuel'
+    const age = 50
+
+    let name_r = await personalDetails.getMyName() // this function got called because same sector function is there in diamond but for different facet
+    let age_r = await personalDetails.getMyAge()
+    assert.equal('Mr '+name,name_r)
+    assert.equal(age,age_r)
+
+    // professional details read functions
+     name_r = await professionalDetails.getMyCompanyName()
+     salary_r = await professionalDetails.getMySalary()
+     let companyname = 'Rapid Innovation'
+     let salary = 550
+    assert.equal(companyname,name_r)
+    assert.equal(salary,salary_r)
+
+    // personal details v1 read function
+     name_r = await personalDetailsV1.getMyName()
+    assert.equal('Mr '+name,name_r)
+
+})
+
 
 })
