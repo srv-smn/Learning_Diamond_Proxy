@@ -186,4 +186,25 @@ describe('Diamond Personal Details', async function () {
       assert.equal(homeTown,homeTown_r)
     })
 
+    it('should remove some professionalDetails functions', async () => {
+      const professionalDetails = await ethers.getContractAt('ProfessionalDetails', diamondAddress)
+      const functionsToRemove = ['setMySalary(uint256)']
+      const selectors = getSelectors(professionalDetails).get(functionsToRemove)
+      tx = await diamondCutFacet.diamondCut(
+        [{
+          facetAddress: ethers.constants.AddressZero,
+          action: FacetCutAction.Remove,
+          functionSelectors: selectors
+        }],
+        ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+      receipt = await tx.wait()
+      if (!receipt.status) {
+        throw Error(`Diamond upgrade failed: ${tx.hash}`)
+      }
+      result = await diamondLoupeFacet.facetFunctionSelectors(addresses[4])
+      assert.sameMembers(result, getSelectors(professionalDetails).remove(functionsToRemove))
+      
+      await expect( professionalDetails.setMySalary(600)).revertedWith('FunctionNotFound')
+    })
+
 })
