@@ -419,7 +419,5 @@ describe('Diamond Personal Details', async function () {
     //   assert.sameMembers(facets[findAddressPositionInFacets(addresses[3], facets)][1], getSelectors(Test1Facet))
     //   assert.sameMembers(facets[findAddressPositionInFacets(addresses[4], facets)][1], getSelectors(Test2Facet))
     // })
-    // add new functions with init
-    // function sharing
-    // code refactor
+// the above 2 commits are for reference if you want to remove most of the function 
   })
