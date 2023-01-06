@@ -10,4 +10,7 @@ struct AppStorage {
     // upgrade-1 , variables for professional details
     string companyName;
     uint256 salary;
+
+    // upgrade-2 , variables for persional details
+    string homeTown;
 }

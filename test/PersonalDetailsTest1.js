@@ -140,5 +140,50 @@ describe('Diamond Personal Details', async function () {
         assert.equal(salary,salary_r)
 
       })
+    
+      it('should replace getMyName and add new state variables function', async () => {
+        const PersonalDetailsV1 = await ethers.getContractFactory('PersonalDetailsV1')
+        personalDetailsV1 = await PersonalDetailsV1.deploy()
+        await personalDetailsV1.deployed()
+        addresses.push(personalDetailsV1.address)
+
+      let selectors = getSelectors(personalDetailsV1).get(['getMyName()'])
+      const selectors1 = getSelectors(personalDetailsV1).remove(['getMyName()'])
+      const testFacetAddress = personalDetailsV1.address
+      tx = await diamondCutFacet.diamondCut(
+        [{
+          facetAddress: testFacetAddress,
+          action: FacetCutAction.Replace,
+          functionSelectors: selectors
+        },
+        {
+            facetAddress: testFacetAddress,
+            action: FacetCutAction.Add,
+            functionSelectors: selectors1
+          }],
+        ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+      receipt = await tx.wait()
+      if (!receipt.status) {
+        throw Error(`Diamond upgrade failed: ${tx.hash}`)
+      }
+      result = await diamondLoupeFacet.facetFunctionSelectors(testFacetAddress)
+      assert.sameMembers(result, getSelectors(personalDetailsV1))
+      
+      //const pd = await ethers.getContractAt('PersonalDetails', professionalDetails.address)
+      
+      result = await diamondLoupeFacet.facetFunctionSelectors(personalDetails.address)
+      assert.sameMembers(result, getSelectors(personalDetails).remove(['getMyName()']))
+
+        personalDetailsV1 = await ethers.getContractAt('PersonalDetailsV1', diamondAddress)
+      const name = 'Raven'
+      let name_r = await personalDetailsV1.getMyName()
+      assert.equal('Mr '+name,name_r)
+
+      const homeTown = 'Bokaro'
+      tx = await personalDetailsV1.setMyHomeTown(homeTown)
+      await tx.wait()
+      let homeTown_r = await personalDetailsV1.getMyHomeTown()
+      assert.equal(homeTown,homeTown_r)
+    })
 
 })
