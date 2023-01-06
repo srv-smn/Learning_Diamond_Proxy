@@ -10,6 +10,8 @@ library PersonalDetailsLib {
     struct TestState {
         string name;
         uint256 age;
+        // new vatiable
+        string homeTown;
     }
 
     // assign storage slot
@@ -32,6 +34,12 @@ library PersonalDetailsLib {
         testState.age = _myAge;
     }
 
+    function setMyHomeTown(string calldata _homeTown) internal {
+        // Diamond storage variables
+        TestState storage testState = diamondStorage(); 
+        testState.homeTown = _homeTown;
+    }
+
     function getMyName() internal view returns (string memory) {
         TestState storage testState = diamondStorage();
         return testState.name;
@@ -41,6 +49,11 @@ library PersonalDetailsLib {
         TestState storage testState = diamondStorage();
         return testState.age;
     }
+
+     function getMyHomeTown() internal view returns (string memory) {
+        TestState storage testState = diamondStorage();
+        return testState.homeTown;
+    }
 }
 
 contract PersonalDetailsV1 {
@@ -48,5 +61,13 @@ contract PersonalDetailsV1 {
     function getMyName() public view returns (string memory) {
         return string.concat('Mr ',PersonalDetailsLib.getMyName());
         //return PersonalDetailsLib.getMyName();
+    }
+
+    function setMyHomeTown(string calldata _homeTown) public {
+        PersonalDetailsLib.setMyHomeTown(_homeTown);
+    }
+
+    function getMyHomeTown() public view returns (string memory){
+        return PersonalDetailsLib.getMyHomeTown();
     }
 }

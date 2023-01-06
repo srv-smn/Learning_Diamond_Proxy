@@ -152,14 +152,20 @@ describe('Diamond Personal Details', async function () {
         await personalDetailsV1.deployed()
         addresses.push(personalDetailsV1.address)
 
-      const selectors = getSelectors(personalDetailsV1).get(['getMyName()'])
+      let selectors = getSelectors(personalDetailsV1).get(['getMyName()'])
+      const selectors1 = getSelectors(personalDetailsV1).remove(['getMyName()'])
       const testFacetAddress = personalDetailsV1.address
       tx = await diamondCutFacet.diamondCut(
         [{
           facetAddress: testFacetAddress,
           action: FacetCutAction.Replace,
           functionSelectors: selectors
-        }],
+        },
+        {
+            facetAddress: testFacetAddress,
+            action: FacetCutAction.Add,
+            functionSelectors: selectors1
+          }],
         ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
       receipt = await tx.wait()
       if (!receipt.status) {
@@ -177,6 +183,12 @@ describe('Diamond Personal Details', async function () {
       const name = 'Raven'
       let name_r = await personalDetailsV1.getMyName()
       assert.equal('Mr '+name,name_r)
+
+      const homeTown = 'Bokaro'
+      tx = await personalDetailsV1.setMyHomeTown(homeTown)
+      await tx.wait()
+      let homeTown_r = await personalDetailsV1.getMyHomeTown()
+      assert.equal(homeTown,homeTown_r)
     })
   
     it('should remove some professionalDetails functions', async () => {
@@ -318,6 +330,7 @@ describe('Diamond Personal Details', async function () {
          name_r = await personalDetailsV1.getMyName()
         assert.equal('Mr '+name,name_r)
 
+       
         // const addName = await personalDetails.setMyName(name)
         // await addName.wait()
         // const addAge = await personalDetails.setMyAge(age)
